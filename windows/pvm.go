@@ -2,6 +2,9 @@ package main
 
 import (
 	"archive/zip"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,7 +15,7 @@ import (
 )
 
 var (
-	VERSION = "0.1.0"
+	VERSION = "0.1.0-alpha"
 	PVM_DIR = ""
 )
 
@@ -51,7 +54,19 @@ func main() {
 	case "root":
 		fmt.Println("PVM Root:", PVM_DIR)
 	case "version":
-		fmt.Println("PVM Version:", VERSION)
+		if len(args) > 0 && args[0] == "--check" {
+			checkVersion()
+		} else {
+			fmt.Println("PVM Version:", VERSION)
+		}
+	case "doctor":
+		doctor()
+	case "verify":
+		if len(args) < 2 {
+			fmt.Println("Usage: pvm verify <filepath> <expected_hash>")
+			return
+		}
+		verifyBinary(args[0], args[1])
 	default:
 		fmt.Printf("Unknown command: %s\n", cmd)
 		help()
@@ -68,7 +83,9 @@ func help() {
 	fmt.Println("  pvm use <version> [arch]       : Switch to the specified Python version.")
 	fmt.Println("  pvm uninstall <version>        : Remove a Python version.")
 	fmt.Println("  pvm root [path]                : Show the PVM root directory.")
-	fmt.Println("  pvm version                    : Display PVM version.")
+	fmt.Println("  pvm version [--check]          : Display PVM version or check for updates.")
+	fmt.Println("  pvm doctor                     : Run environment diagnostics.")
+	fmt.Println("  pvm verify <file> <hash>       : Verify file integrity using SHA-256.")
 }
 
 func current() {
@@ -79,6 +96,41 @@ func current() {
 		return
 	}
 	fmt.Printf("Current version: %s\n", filepath.Base(link))
+}
+
+func doctor() {
+	pvmCurrent := filepath.Join(PVM_DIR, "current")
+
+	// 1. PVM current is first in PATH
+	pathEnv := os.Getenv("PATH")
+	paths := strings.Split(pathEnv, ";")
+	if len(paths) > 0 && strings.EqualFold(paths[0], pvmCurrent) {
+		fmt.Println("PVM current is first in PATH: OK")
+	} else {
+		fmt.Println("PVM current is first in PATH: FAIL")
+	}
+
+	// 2. Python resolves to PVM
+	cmd := exec.Command("where", "python")
+	output, err := cmd.Output()
+	if err == nil {
+		lines := strings.Split(strings.TrimSpace(string(output)), "\r\n")
+		if len(lines) > 0 && strings.Contains(strings.ToLower(lines[0]), strings.ToLower(pvmCurrent)) {
+			fmt.Println("Python resolves to PVM: OK")
+		} else {
+			fmt.Println("Python resolves to PVM: FAIL")
+		}
+	} else {
+		fmt.Println("Python resolves to PVM: FAIL (python not found)")
+	}
+
+	// 3. Current version
+	link, err := os.Readlink(pvmCurrent)
+	if err == nil {
+		fmt.Printf("Current version: %s\n", filepath.Base(link))
+	} else {
+		fmt.Println("Current version: None")
+	}
 }
 
 func system() {
@@ -294,4 +346,90 @@ func unzip(src, dest string) error {
 		}
 	}
 	return nil
+}
+
+func getLatestTag(url string, key string) string {
+	resp, err := http.Get(url)
+	if err != nil {
+		return ""
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return ""
+	}
+
+	var data interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+		return ""
+	}
+
+	if key == "tag_name" {
+		// Response for /releases/latest is an object
+		if m, ok := data.(map[string]interface{}); ok {
+			if v, ok := m["tag_name"].(string); ok {
+				return v
+			}
+		}
+	} else if key == "name" {
+		// Response for /tags is an array
+		if slice, ok := data.([]interface{}); ok && len(slice) > 0 {
+			if m, ok := slice[0].(map[string]interface{}); ok {
+				if v, ok := m["name"].(string); ok {
+					return v
+				}
+			}
+		}
+	}
+	return ""
+}
+
+func checkVersion() {
+	fmt.Println("Checking for PVM updates...")
+	
+	// 1. Try /releases/latest
+	latestTag := getLatestTag("https://api.github.com/repos/pvm-shell/PVM/releases/latest", "tag_name")
+	
+	// 2. Fallback to /tags
+	if latestTag == "" {
+		latestTag = getLatestTag("https://api.github.com/repos/pvm-shell/PVM/tags", "name")
+	}
+
+	if latestTag == "" {
+		fmt.Println("Could not determine latest version.")
+		return
+	}
+
+	if latestTag != "v"+VERSION {
+		fmt.Printf("New version available: %s (Current: v%s)\n", latestTag, VERSION)
+	} else {
+		fmt.Printf("PVM is up to date: %s\n", latestTag)
+	}
+}
+
+func verifyBinary(path, expectedHash string) {
+	fmt.Printf("Verifying %s...\n", path)
+	f, err := os.Open(path)
+	if err != nil {
+		fmt.Printf("Error opening file: %v\n", err)
+		return
+	}
+	defer f.Close()
+
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
+		fmt.Printf("Error calculating hash: %v\n", err)
+		return
+	}
+
+	actualHash := hex.EncodeToString(h.Sum(nil))
+	fmt.Printf("Actual SHA-256: %s\n", actualHash)
+	fmt.Printf("Expected SHA-256: %s\n", strings.ToLower(expectedHash))
+
+	if strings.EqualFold(actualHash, expectedHash) {
+		fmt.Println("✅ Verification SUCCESS: Hashes match!")
+	} else {
+		fmt.Println("❌ Verification FAILED: Hashes do NOT match!")
+		os.Exit(1)
+	}
 }

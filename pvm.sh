@@ -67,6 +67,7 @@ pvm_help() {
   echo "  pvm system                        Show the system Python version"
   echo "  pvm ls                            List installed versions"
   echo "  pvm ls-remote                     List available versions from python.org"
+  echo "  pvm doctor                        Run environment diagnostics"
   echo "  pvm alias <name> <version>        Create an alias for a version"
   echo "  pvm unalias <name>                Remove an alias"
   echo "  pvm which <version>               Show the path to a version's executable"
@@ -107,6 +108,32 @@ pvm_current() {
   fi
 }
 
+pvm_doctor() {
+  # 1. PVM current is first in PATH
+  local first_path=$(echo "$PATH" | cut -d: -f1)
+  if [ -n "$PVM_BIN" ] && [ "$first_path" = "$PVM_BIN" ]; then
+    echo "PVM current is first in PATH: OK"
+  else
+    echo "PVM current is first in PATH: FAIL"
+  fi
+
+  # 2. Python resolves to PVM
+  local python_path=$(command -v python3 || command -v python)
+  if [ -n "$python_path" ] && echo "$python_path" | grep -q "^$PVM_DIR/versions/"; then
+    echo "Python resolves to PVM: OK"
+  else
+    echo "Python resolves to PVM: FAIL"
+  fi
+
+  # 3. Current version
+  local version=$(pvm_current)
+  if [ "$version" = "pvm: No version currently in use." ]; then
+    echo "Current version: None"
+  else
+    echo "Current version: $version"
+  fi
+}
+
 pvm_system() {
   if command -v python3 >/dev/null 2>&1; then
     echo "System Python: $(python3 --version 2>&1)"
@@ -129,9 +156,16 @@ pvm_version() {
       return 1
     fi
     local latest_tag
+    # 1. Try /releases/latest
     latest_tag=$(curl -s https://api.github.com/repos/pvm-shell/PVM/releases/latest | grep -Po '"tag_name": "\K[^"]*')
+    
+    # 2. Fallback to /tags
     if [ -z "$latest_tag" ]; then
-      pvm_error "Could not fetch latest version from GitHub."
+      latest_tag=$(curl -s https://api.github.com/repos/pvm-shell/PVM/tags | grep -Po '"name": "\K[^"]*' | head -n 1)
+    fi
+
+    if [ -z "$latest_tag" ]; then
+      pvm_echo "Could not determine latest version."
       return 1
     fi
     if [ "$latest_tag" != "v$current_version" ]; then
@@ -341,6 +375,7 @@ pvm() {
     system) pvm_system ;;
     ls) pvm_ls ;;
     ls-remote) pvm_ls_remote ;;
+    doctor) pvm_doctor ;;
     alias) pvm_alias "$@" ;;
     unalias) pvm_unalias "$@" ;;
     which) pvm_which "$@" ;;

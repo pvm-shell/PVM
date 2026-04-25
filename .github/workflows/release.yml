@@ -1,0 +1,65 @@
+# This workflow handles automated releases for PVM.
+# Note: "Unable to resolve action" warnings in your IDE are safe to ignore.
+# They occur because the IDE cannot pre-validate these actions offline.
+# The code is correct and will execute successfully on GitHub.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+
+      - name: Build Windows binary
+        run: |
+          cd windows
+          go build -ldflags "-s -w" -o pvm.exe pvm.go
+
+      - name: Build Inno Setup Installer
+        shell: pwsh
+        run: |
+          cd windows
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" pvm-setup.iss
+
+      - name: Generate Checksums
+        shell: pwsh
+        run: |
+          $files = @("windows/pvm.exe", "windows/pvm-setup.exe", "pvm.sh", "install.sh")
+          $hashFile = "CHECKSUMS.sha256"
+          if (Test-Path $hashFile) { Remove-Item $hashFile }
+          foreach ($file in $files) {
+              if (Test-Path $file) {
+                  $hash = (Get-FileHash -Path $file -Algorithm SHA256).Hash.ToLower()
+                  $name = Split-Path $file -Leaf
+                  "$hash  $name" | Out-File -FilePath $hashFile -Append -Encoding ascii
+              }
+          }
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            windows/pvm.exe
+            windows/pvm-setup.exe
+            pvm.sh
+            install.sh
+            CHECKSUMS.sha256
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
