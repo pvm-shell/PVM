@@ -1,3 +1,5 @@
+# PVM - Python Version Manager
+
 <p align="center">
   <img src="https://github.com/user-attachments/assets/b042f9b9-fc0a-49e4-8173-d12706c96aff" alt="PVM Banner" width="100%">
 </p>
@@ -102,17 +104,23 @@ pvm ls
 pvm ls-remote
 ```
 
-### Set Default Version
+### System Python
+
+PVM can detect and use the Python version already installed on your system.
 
 ```sh
-pvm alias default 3.12
+pvm system
 ```
 
-### Run Command With Version
+Example output:
+```text
+System Python: Python 3.12.4
+Path: /usr/bin/python3
+```
 
+To switch back to the system Python:
 ```sh
-pvm run 3.12 --version
-pvm exec 3.12 python -m pip --version
+pvm use system
 ```
 
 ---
@@ -200,7 +208,7 @@ pvm use 3.12
 ## Uninstall
 
 ```sh
-pvm unload
+pvm deactivate
 rm -rf ~/.pvm
 ```
 
