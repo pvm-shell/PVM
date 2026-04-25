@@ -1,0 +1,3 @@
+module pvm
+
+go 1.25.6

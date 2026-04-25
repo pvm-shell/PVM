@@ -1,0 +1,21 @@
+# Binaries
+*.exe
+*.o
+*.a
+*.so
+*.syso
+*.res
+
+# PVM Specific
+windows/pvm.exe
+windows/pvm-setup.exe
+windows/aria2/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+
+# OS
+Thumbs.db
+.DS_Store

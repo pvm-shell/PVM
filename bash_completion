@@ -1,0 +1,28 @@
+_pvm_completion() {
+  local cur prev
+  COMPREPLY=()
+  cur="${COMP_WORDS[COMP_CWORD]}"
+  prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+  local commands="help install use current ls ls-remote alias unalias which run exec venv deactivate uninstall cache"
+
+  if [ $COMP_CWORD -eq 1 ]; then
+    COMPREPLY=( $(compgen -W "${commands}" -- ${cur}) )
+    return 0
+  fi
+
+  case "${prev}" in
+    use|install|uninstall|which|run|exec|alias)
+      local versions=$(ls "$PVM_DIR/versions" 2>/dev/null)
+      local aliases=$(ls "$PVM_DIR/alias" 2>/dev/null)
+      COMPREPLY=( $(compgen -W "${versions} ${aliases}" -- ${cur}) )
+      ;;
+    cache)
+      COMPREPLY=( $(compgen -W "clear" -- ${cur}) )
+      ;;
+  esac
+
+  return 0
+}
+
+complete -F _pvm_completion pvm

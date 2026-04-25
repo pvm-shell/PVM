@@ -1,0 +1,3 @@
+root: %LOCALAPPDATA%\pvm
+path: %LOCALAPPDATA%\pvm\current
+mirror: https://www.python.org/ftp/python/
