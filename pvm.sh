@@ -59,6 +59,8 @@ pvm_help() {
   echo
   echo "Usage:"
   echo "  pvm help                          Show this message"
+  echo "  pvm version [--check]             Show version or check for updates"
+  echo "  pvm verify <file> <hash>          Verify file integrity (SHA-256)"
   echo "  pvm install <version>             Install a Python version"
   echo "  pvm use <version>                 Use a Python version"
   echo "  pvm current                       Show the current Python version"
@@ -114,6 +116,62 @@ pvm_system() {
     echo "Path: $(command -v python)"
   else
     echo "No system Python found."
+    return 1
+  fi
+}
+
+pvm_version() {
+  local current_version="0.1.0-alpha"
+  if [ "$1" = "--check" ]; then
+    pvm_echo "Checking for PVM updates..."
+    if ! command -v curl >/dev/null 2>&1; then
+      pvm_error "curl is required for version check."
+      return 1
+    fi
+    local latest_tag
+    latest_tag=$(curl -s https://api.github.com/repos/pvm-shell/PVM/releases/latest | grep -Po '"tag_name": "\K[^"]*')
+    if [ -z "$latest_tag" ]; then
+      pvm_error "Could not fetch latest version from GitHub."
+      return 1
+    fi
+    if [ "$latest_tag" != "v$current_version" ]; then
+      pvm_echo "New version available: $latest_tag (Current: v$current_version)"
+    else
+      pvm_echo "PVM is up to date: $latest_tag"
+    fi
+  else
+    echo "pvm v$current_version"
+  fi
+}
+
+pvm_verify() {
+  local file="$1"
+  local expected="$2"
+  if [ -z "$file" ] || [ -z "$expected" ]; then
+    pvm_error "Usage: pvm verify <file> <hash>"
+    return 1
+  fi
+
+  pvm_echo "Verifying $file..."
+  local actual=""
+  if command -v sha256sum >/dev/null 2>&1; then
+    actual=$(sha256sum "$file" | cut -d' ' -f1)
+  elif command -v openssl >/dev/null 2>&1; then
+    actual=$(openssl dgst -sha256 "$file" | sed 's/.*= //')
+  elif command -v shasum >/dev/null 2>&1; then
+    actual=$(shasum -a 256 "$file" | cut -d' ' -f1)
+  else
+    pvm_error "No SHA-256 tool found (sha256sum, openssl, or shasum required)."
+    return 1
+  fi
+
+  pvm_echo "Actual: $actual"
+  pvm_echo "Expected: $expected"
+
+  if [ "$actual" = "$expected" ]; then
+    pvm_echo "✅ Verification SUCCESS: Hashes match!"
+  else
+    pvm_error "❌ Verification FAILED: Hashes do NOT match!"
     return 1
   fi
 }
@@ -275,6 +333,8 @@ pvm() {
 
   case "$cmd" in
     help) pvm_help ;;
+    version) pvm_version "$@" ;;
+    verify) pvm_verify "$@" ;;
     install) pvm_install "$@" ;;
     use) pvm_use "$@" ;;
     current) pvm_current ;;

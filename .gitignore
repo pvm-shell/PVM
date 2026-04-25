@@ -1,35 +1,37 @@
-<<<<<<< HEAD
-# Binaries
-*.exe
+# Node
+node_modules/
+.next/
+Web/out/
+.cache/
+
+# Go
 *.o
 *.a
 *.so
 *.syso
 *.res
-
-# PVM Specific
 windows/pvm.exe
 windows/pvm-setup.exe
 windows/aria2/
+windows/pvm_res.syso
+windows/pvm.res
 
-# IDEs
-.vscode/
-.idea/
-*.swp
-
-# OS
-Thumbs.db
-.DS_Store
-=======
-.DS_Store
-.env
-.venv/
-venv/
+# Python
 __pycache__/
 *.pyc
 *.pyo
 *.log
-.cache/
-dist/
-build/
->>>>>>> 1c8d6593411cd3b8f54f8ee557146be44355dbc2
+.venv/
+venv/
+
+# IDEs & OS
+.vscode/
+.idea/
+*.swp
+Thumbs.db
+.DS_Store
+
+# Misc
+.env
+*.pfx
+!dist/
