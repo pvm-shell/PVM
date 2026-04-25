@@ -1,14 +1,11 @@
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/b042f9b9-fc0a-49e4-8173-d12706c96aff" alt="PVM Banner">
+  <img src="https://github.com/user-attachments/assets/b042f9b9-fc0a-49e4-8173-d12706c96aff" alt="PVM Banner" width="100%">
 </p>
 
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/82753fa9-d51d-48e2-ba52-5c4f1e78826f" alt="PVM Logo" width="180">
-</p>
-
-<h1 align="center">PVM - Python Version Manager</h1>
+<h1 align="center">PVM</h1>
 
 <p align="center">
+  <strong>Python Version Manager</strong><br>
   POSIX-compliant shell script to manage multiple active Python versions.
 </p>
 
@@ -55,9 +52,9 @@ Simple, fast, and flexible.
 
 `pvm` is a Python version manager designed to be installed per-user and used per-shell.
 
-It focuses on Python versions, Python executables, `pip`, virtual environments, and per-project Python selection through `.pvmrc` files.
+It focuses on Python versions, executables, `pip`, virtual environments, and project-based version control via `.pvmrc`.
 
-`pvm` works on POSIX-compliant shells across Linux, macOS, and Windows WSL.
+Works across Linux, macOS, and Windows using WSL.
 
 ---
 
@@ -115,9 +112,6 @@ pvm alias default 3.12
 
 ```sh
 pvm run 3.12 --version
-```
-
-```sh
 pvm exec 3.12 python -m pip --version
 ```
 
@@ -125,15 +119,8 @@ pvm exec 3.12 python -m pip --version
 
 ## .pvmrc
 
-Create a `.pvmrc` file in your project:
-
 ```sh
 echo "3.12" > .pvmrc
-```
-
-Then use it:
-
-```sh
 pvm use
 ```
 
@@ -143,33 +130,20 @@ If the version is not installed:
 pvm install
 ```
 
-This enables per-project Python version management.
-
 ---
 
 ## Virtual Environments
 
-Create a virtual environment with the active Python version:
-
 ```sh
 pvm venv .venv
-```
-
-Activate it:
-
-```sh
 . .venv/bin/activate
 ```
 
-Create a virtual environment with a specific Python version:
+Specific version:
 
 ```sh
 pvm venv 3.12 .venv
 ```
-
-`pvm` does not replace `venv`, `virtualenv`, `pip`, `pipx`, `poetry`, `uv`, or `pipenv`.
-
-It focuses on selecting and managing Python runtimes.
 
 ---
 
@@ -181,24 +155,16 @@ cd ~/.pvm
 . ./pvm.sh
 ```
 
-Add this to your shell profile:
+Add to your shell config:
 
 ```sh
 export PVM_DIR="$HOME/.pvm"
 [ -s "$PVM_DIR/pvm.sh" ] && . "$PVM_DIR/pvm.sh"
 ```
 
-For bash completion:
-
-```sh
-[ -s "$PVM_DIR/bash_completion" ] && . "$PVM_DIR/bash_completion"
-```
-
 ---
 
 ## Environment Variables
-
-`pvm` uses the following environment variables:
 
 ```sh
 PVM_DIR
@@ -208,13 +174,11 @@ PVM_VERSION
 PVM_RC_VERSION
 ```
 
-`pvm` modifies `PATH` when switching Python versions.
-
 ---
 
 ## Compatibility Notes
 
-Some Python environment variables may conflict with version switching:
+The following environment variables may affect Python version switching:
 
 ```sh
 PYTHONHOME
@@ -224,7 +188,7 @@ PIP_TARGET
 VIRTUAL_ENV
 ```
 
-If you are inside a virtual environment, deactivate it before switching versions:
+If needed:
 
 ```sh
 deactivate
@@ -240,29 +204,14 @@ pvm unload
 rm -rf ~/.pvm
 ```
 
-Then remove these lines from your shell profile:
-
-```sh
-export PVM_DIR="$HOME/.pvm"
-[ -s "$PVM_DIR/pvm.sh" ] && . "$PVM_DIR/pvm.sh"
-```
-
 ---
 
 ## Project Status
 
-PVM is currently in early development.
-
-The goal is to provide a lightweight, POSIX-first Python version manager inspired by `nvm`.
+Early development.
 
 ---
 
 ## License
 
-MIT License. See [LICENSE](./LICENSE) for details.
-
----
-
-## Copyright
-
-Copyright PVM contributors.
+MIT License. See [LICENSE](./LICENSE).
