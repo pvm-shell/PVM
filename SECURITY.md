@@ -4,7 +4,7 @@
 
 If you discover a security vulnerability, please do NOT open a public issue.
 
-Send an email to security@pvm-shell.org instead.
+Send an email to security@pvm.is-best.net instead.
 
 ## Principles
 
