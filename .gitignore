@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Binaries
 *.exe
 *.o
@@ -19,3 +20,16 @@ windows/aria2/
 # OS
 Thumbs.db
 .DS_Store
+=======
+.DS_Store
+.env
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.log
+.cache/
+dist/
+build/
+>>>>>>> 1c8d6593411cd3b8f54f8ee557146be44355dbc2
