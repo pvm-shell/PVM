@@ -2,6 +2,7 @@ import os
 import subprocess
 import sys
 import glob
+import hashlib
 
 # --- Configuration ---
 PFX_PASS = "ueo586_crty555"
@@ -127,6 +128,22 @@ def get_pfx():
     print("Warning: No .pfx file found. Skipping signing.")
     return None
 
+def generate_checksums(files):
+    """Generates SHA-256 checksums for the given files."""
+    print("Generating SHA-256 checksums...")
+    with open("CHECKSUMS.sha256", "w") as f:
+        for file_path in files:
+            if not os.path.exists(file_path):
+                continue
+            sha256_hash = hashlib.sha256()
+            with open(file_path, "rb") as bf:
+                for byte_block in iter(lambda: bf.read(4096), b""):
+                    sha256_hash.update(byte_block)
+            hash_str = sha256_hash.hexdigest()
+            f.write(f"{hash_str}  {file_path}\n")
+            print(f"{file_path}: {hash_str}")
+    print("Successfully generated CHECKSUMS.sha256")
+
 def main():
     # 0. Compile Resources
     has_res = compile_resources()
@@ -151,6 +168,9 @@ def main():
     installer_path = "pvm-setup.exe"
     if pfx and os.path.exists(installer_path):
         sign_file(installer_path, pfx)
+
+    # 5. Generate Checksums
+    generate_checksums(["pvm.exe", "pvm-setup.exe"])
 
     print("\n--- Build Complete ---")
     if pfx:
