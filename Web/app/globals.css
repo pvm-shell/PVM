@@ -139,6 +139,8 @@ body {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   font-size: 0.875rem;
   color: #cbd5e1; /* slate-300 */
+  appearance: none;
+  -webkit-appearance: none;
   position: relative;
   overflow: hidden;
 }
